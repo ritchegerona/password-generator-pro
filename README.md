@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="PassGenPro_Logo.png" alt="PassGen Pro Logo" width="300"/>
+</div>
+
 # PassGen Pro
 
 An advanced, client‑side password generator built with vanilla HTML, CSS, and JavaScript.
