@@ -1067,14 +1067,37 @@
         return sets;
       }
 
+      // Cryptographically secure random integer in [0, max).
+      // Uses rejection sampling so the result is unbiased (no modulo bias).
+      function secureRandomIndex(max) {
+        if (max <= 0) return 0;
+        const limit = Math.floor(0x100000000 / max) * max; // largest multiple of max < 2^32
+        const buf = new Uint32Array(1);
+        let val;
+        do {
+          crypto.getRandomValues(buf);
+          val = buf[0];
+        } while (val >= limit);
+        return val % max;
+      }
+
+      // Cryptographically secure Fisher–Yates in-place shuffle.
+      function secureShuffle(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = secureRandomIndex(i + 1);
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+      }
+
       function generatePronounceable(length) {
         const vowels = 'aeiou';
         const consonants = 'bcdfghjklmnpqrstvwxyz';
         let pwd = '';
         for (let i = 0; i < length; i++) {
           pwd += (i % 2 === 0)
-            ? consonants[Math.floor(Math.random() * consonants.length)]
-            : vowels[Math.floor(Math.random() * vowels.length)];
+            ? consonants[secureRandomIndex(consonants.length)]
+            : vowels[secureRandomIndex(vowels.length)];
         }
         return pwd;
       }
@@ -1095,7 +1118,7 @@
           let pwd = '';
           const remaining = [];
           for (const set of sets) {
-            const idx = Math.floor(Math.random() * set.length);
+            const idx = secureRandomIndex(set.length);
             pwd += set[idx];
             // remove used char from set for remaining pool
             const remainingSet = set.slice(0, idx) + set.slice(idx + 1);
@@ -1104,15 +1127,15 @@
           // Fill rest from combined pool
           const combined = sets.join('');
           for (let i = pwd.length; i < length; i++) {
-            pwd += combined[Math.floor(Math.random() * combined.length)];
+            pwd += combined[secureRandomIndex(combined.length)];
           }
-          // Shuffle
-          return pwd.split('').sort(() => Math.random() - 0.5).join('');
+          // Securely shuffle so the enforced characters aren’t always first.
+          return secureShuffle(pwd.split('')).join('');
         }
 
         let password = '';
         for (let i = 0; i < length; i++) {
-          password += charset[Math.floor(Math.random() * charset.length)];
+          password += charset[secureRandomIndex(charset.length)];
         }
         return password;
       }
